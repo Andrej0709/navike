@@ -65,7 +65,8 @@ const q = async req => { const { data, error } = await req; if (error) throw err
 
 // ---------- State ----------
 const S = {
-  screen: 'loading', tab: 'feed', editMode: false, loginSent: null, error: null, pick: null,
+  screen: 'loading', tab: 'feed', editMode: false, error: null, pick: null,
+  authMode: 'login', email: '', sent: null, recovery: false,
   session: null, me: null, teams: [], teamId: LS.get('team'),
   members: [], habits: [], feed: [], week: [], urls: new Map(),
 };
@@ -74,11 +75,28 @@ const uid = () => S.session.user.id;
 const team = () => S.teams.find(t => t.id === S.teamId);
 const member = id => S.members.find(m => m.id === id);
 
+const appUrl = () => location.origin + location.pathname;
+
 // Invite links look like ?kod=ABC123. Remember the code through login.
 {
   const kod = new URLSearchParams(location.search).get('kod');
-  if (kod) { LS.set('pending-kod', kod.trim().toUpperCase()); history.replaceState(null, '', location.pathname); }
+  if (kod) { LS.set('pending-kod', kod.trim().toUpperCase()); history.replaceState(null, '', location.pathname + location.hash); }
 }
+// Password reset links come back with type=recovery in the URL hash
+if (location.hash.includes('type=recovery')) S.recovery = true;
+
+// Supabase auth errors in plain Serbian
+const ERRORS = [
+  [/invalid login credentials/i, 'Pogrešan email ili lozinka'],
+  [/already registered|already exists/i, 'Ovaj email već ima nalog. Prijavi se.'],
+  [/email not confirmed/i, 'Email još nije potvrđen'],
+  [/password should be at least/i, 'Lozinka mora imati bar 6 znakova'],
+  [/rate limit|too many/i, 'Previše pokušaja. Sačekaj malo pa probaj ponovo.'],
+  [/should be different/i, 'Nova lozinka mora biti drugačija od stare'],
+  [/provider is not enabled/i, 'Google prijava još nije uključena'],
+];
+const errText = e => { const m = e?.message || ''; return (ERRORS.find(([re]) => re.test(m)) || [])[1] || m || 'Greška, pokušaj ponovo'; };
+const validEmail = s => /^\S+@\S+\.\S+$/.test(s);
 
 // ---------- Loading ----------
 let booting = null;
@@ -90,6 +108,7 @@ async function doBoot() {
     const { data } = await sb.auth.getSession();
     S.session = data.session;
     if (!S.session) return show('login');
+    if (S.recovery) return show('newpass');
 
     S.me = await q(sb.from('profiles').select('*').eq('id', uid()).maybeSingle());
     if (!S.me) {
@@ -196,17 +215,31 @@ const vError = () => `<div class="screen"><div class="logo">Navike</div><div cla
   <button class="btn-ghost" data-act="logout">Odjavi se</button></div>`;
 
 function vLogin() {
-  if (S.loginSent) return `<div class="screen"><div class="logo">Navike</div><div class="h2">Proveri email</div>
-    <p class="lead">Poslali smo link na <b>${esc(S.loginSent)}</b>. Otvori ga na ovom uređaju i vraćaš se ovde prijavljen.</p>
-    <button class="btn-ghost" data-act="login-back">Drugi email</button></div>`;
+  if (S.sent) return `<div class="screen"><div class="logo">Navike</div><div class="h2">Proveri email</div>
+    <p class="lead">${S.sent.kind === 'reset' ? 'Poslali smo link za novu lozinku na' : 'Poslali smo link za potvrdu naloga na'} <b>${esc(S.sent.email)}</b>. Otvori ga na ovom uređaju.</p>
+    <button class="btn-ghost" data-act="login-back">Nazad na prijavu</button></div>`;
+  const signup = S.authMode === 'signup';
   return `<div class="screen"><div class="logo">Navike</div>
     <p class="lead">Navike sa ekipom. Slikaj dokaz, skupljaj poene, pobedi drugare.</p>
+    <div class="seg auth-seg">
+      <button class="${signup ? '' : 'on'}" data-act="auth-mode" data-v="login"><b>Prijava</b></button>
+      <button class="${signup ? 'on' : ''}" data-act="auth-mode" data-v="signup"><b>Novi nalog</b></button>
+    </div>
     <label class="lbl" for="email">Email</label>
-    <input class="field" id="email" type="email" inputmode="email" autocomplete="email" placeholder="ti@primer.com" data-enter="login-email">
-    <button class="btn-volt" data-act="login-email">Pošalji mi link</button>
+    <input class="field" id="email" type="email" inputmode="email" autocomplete="email" placeholder="ti@primer.com" value="${esc(S.email)}" data-enter="auth-submit">
+    <label class="lbl" for="pass">Lozinka</label>
+    <input class="field" id="pass" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}" placeholder="${signup ? 'Bar 6 znakova' : ''}" data-enter="auth-submit">
+    <button class="btn-volt" data-act="auth-submit">${signup ? 'Napravi nalog' : 'Prijavi se'}</button>
+    ${signup ? '' : '<button class="link-btn" data-act="forgot">Zaboravljena lozinka?</button>'}
     <div class="divider">ili</div>
     <button class="btn-google" data-act="login-google">${SVG.google}Nastavi sa Google</button></div>`;
 }
+
+const vNewPass = () => `<div class="screen"><div class="logo">Navike</div><div class="h2">Nova lozinka</div>
+  <p class="lead">Upiši novu lozinku za svoj nalog.</p>
+  <label class="lbl" for="newpass">Lozinka</label>
+  <input class="field" id="newpass" type="password" autocomplete="new-password" placeholder="Bar 6 znakova" data-enter="set-pass">
+  <button class="btn-volt" data-act="set-pass">Sačuvaj lozinku</button></div>`;
 
 const vOnboard = () => `<div class="screen"><div class="logo">Navike</div><div class="h2">Kako da te zovu?</div>
   <p class="lead">Ime i boju vide drugari u tvojim ekipama.</p>${profileForm('Kreni', 'save-onboard')}</div>`;
@@ -323,7 +356,7 @@ function vTeam() {
     </div>`;
 }
 
-const SCREENS = { loading: vLoading, setup: vSetup, error: vError, login: vLogin, onboard: vOnboard, noteam: vNoTeam };
+const SCREENS = { loading: vLoading, setup: vSetup, error: vError, login: vLogin, newpass: vNewPass, onboard: vOnboard, noteam: vNoTeam };
 const VIEWS = { feed: vFeed, today: vToday, rank: vRank, team: vTeam };
 
 function show(screen) {
@@ -445,15 +478,42 @@ async function enterTeam(t, msg) {
 // ---------- Actions ----------
 const ACTIONS = {
   // Auth
-  async 'login-email'(b) {
-    const f = $('#email'), email = f.value.trim();
-    if (!/^\S+@\S+\.\S+$/.test(email)) return shake(f);
-    await busy(b, 'Šaljem…', () => q(sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } })));
-    S.loginSent = email; render();
+  'auth-mode'(b, { v }) {
+    S.email = $('#email').value.trim();
+    S.authMode = v; render();
+    $(S.email ? '#pass' : '#email').focus();
   },
-  'login-back'() { S.loginSent = null; render(); },
+  async 'auth-submit'(b) {
+    const ef = $('#email'), pf = $('#pass'), email = ef.value.trim(), password = pf.value;
+    S.email = email;
+    if (!validEmail(email)) return shake(ef);
+    if (password.length < 6) { toast('Lozinka mora imati bar 6 znakova'); return shake(pf); }
+    if (S.authMode === 'signup') {
+      const data = await busy(b, 'Pravim nalog…', () => q(sb.auth.signUp({ email, password, options: { emailRedirectTo: appUrl() } })));
+      // No session means Supabase still requires email confirmation
+      if (!data.session) { S.sent = { email, kind: 'confirm' }; render(); }
+    } else {
+      await busy(b, 'Prijavljujem…', () => q(sb.auth.signInWithPassword({ email, password })));
+    }
+  },
+  async forgot(b) {
+    const ef = $('#email'), email = ef.value.trim();
+    if (!validEmail(email)) { toast('Upiši email iznad'); return shake(ef); }
+    await busy(b, 'Šaljem…', () => q(sb.auth.resetPasswordForEmail(email, { redirectTo: appUrl() })));
+    S.sent = { email, kind: 'reset' }; render();
+  },
+  async 'set-pass'(b) {
+    const pf = $('#newpass');
+    if (pf.value.length < 6) { toast('Lozinka mora imati bar 6 znakova'); return shake(pf); }
+    await busy(b, 'Čuvam…', () => q(sb.auth.updateUser({ password: pf.value })));
+    S.recovery = false;
+    history.replaceState(null, '', location.pathname);
+    toast('Lozinka sačuvana');
+    show('loading'); boot();
+  },
+  'login-back'() { S.sent = null; render(); },
   async 'login-google'() {
-    await q(sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }));
+    await q(sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: appUrl() } }));
   },
   async logout() { await sb.auth.signOut(); },
   retry() { show('loading'); boot(); },
@@ -596,7 +656,7 @@ document.addEventListener('click', e => {
   if (!fn) return;
   Promise.resolve()
     .then(() => fn(b, b.dataset))
-    .catch(err => { if (err === BUSY) return; console.error(err); toast(err?.message || 'Greška, pokušaj ponovo'); });
+    .catch(err => { if (err === BUSY) return; console.error(err); toast(errText(err)); });
 });
 
 document.addEventListener('keydown', e => {
@@ -615,9 +675,10 @@ $('#photo-input').addEventListener('change', async e => {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
 
 sb?.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') { S.recovery = true; S.session = session; show('newpass'); return; }
   if (event === 'SIGNED_IN' && session?.user.id !== S.session?.user.id) setTimeout(boot);
   if (event === 'SIGNED_OUT') {
-    Object.assign(S, { session: null, me: null, teams: [], members: [], habits: [], feed: [], week: [], loginSent: null, tab: 'feed' });
+    Object.assign(S, { session: null, me: null, teams: [], members: [], habits: [], feed: [], week: [], sent: null, recovery: false, tab: 'feed' });
     S.urls.clear();
     closeSheet();
     setTimeout(boot);
