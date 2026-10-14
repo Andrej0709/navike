@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0C">
+<title>Navike – prototip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,800;1,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0A0C; --surface:#131317; --surface-2:#1B1B21; --line:#26262E;
+  --text:#F4F4F5; --muted:#8B8B96; --volt:#D4FF3A; --ink:#0A0A0C; --hot:#FF5A36; --cyan:#3AE0FF; --mint:#2FD39A;
+  --display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#050506;color:var(--text);font-family:var(--body);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body{min-height:100dvh}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit}
+.muted{color:var(--muted)}
+
+.app{max-width:440px;margin:0 auto;min-height:100dvh;background:var(--bg);position:relative;padding-bottom:100px;border-left:1px solid #15151a;border-right:1px solid #15151a}
+
+/* Header */
+.top{position:sticky;top:0;z-index:5;padding:20px 16px 14px;background:linear-gradient(var(--bg) 75%,transparent);display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.h1{font-family:var(--display);font-weight:800;font-style:italic;font-size:44px;line-height:.85;text-transform:uppercase;letter-spacing:.3px}
+.sub{color:var(--muted);font-size:13px;margin-top:6px}
+.sub b{color:var(--text)}
+.pill-btn{font-size:13px;font-weight:600;padding:8px 14px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+
+/* Avatar */
+.av{border-radius:50%;display:grid;place-items:center;color:var(--ink);font-family:var(--display);font-weight:800;flex:none}
+
+/* Stories */
+.stories{display:flex;gap:14px;overflow-x:auto;padding:2px 16px 16px;scrollbar-width:none}
+.stories::-webkit-scrollbar{display:none}
+.story{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:var(--muted);flex:none}
+.story .ring{padding:3px;border-radius:50%;border:2px solid var(--line)}
+.story.on .ring{border-color:var(--volt);box-shadow:0 0 14px rgba(212,255,58,.35)}
+.story.on{color:var(--text)}
+
+/* Post */
+.post{margin:0 12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.post-head{display:flex;align-items:center;gap:10px;padding:12px}
+.who{flex:1;min-width:0;font-size:14px}
+.hl{font-size:13px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pts{font-family:var(--display);font-style:italic;font-weight:800;font-size:28px;color:var(--volt)}
+.media{position:relative;aspect-ratio:4/5;background:#000}
+.media img{width:100%;height:100%;object-fit:cover;display:block}
+.ph{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(145deg,var(--g1) 10%,var(--g2) 140%);overflow:hidden}
+.ph::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-55deg,rgba(255,255,255,.035) 0 14px,transparent 14px 28px)}
+.ph span{font-size:110px;filter:drop-shadow(0 16px 30px rgba(0,0,0,.5));position:relative;z-index:1}
+.streak-badge{position:absolute;left:12px;bottom:12px;background:rgba(10,10,12,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:5px 12px;border-radius:999px;font-family:var(--display);font-weight:800;font-size:19px;font-style:italic}
+.cap{padding:12px 14px 0;font-size:14px;line-height:1.45}
+.reacts{display:flex;gap:8px;padding:12px}
+.react{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:15px;transition:transform .15s var(--ease)}
+.react b{font-size:13px;font-weight:600;color:var(--muted);min-width:0}
+.react.on{border-color:var(--volt);background:rgba(212,255,58,.1)}
+.react.on b{color:var(--volt)}
+.react:active{transform:scale(.92)}
+
+.diff{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:2px 7px;border-radius:6px}
+.d-lako{color:var(--mint);background:rgba(47,211,154,.12)}
+.d-srednje{color:var(--cyan);background:rgba(58,224,255,.12)}
+.d-tesko{color:var(--hot);background:rgba(255,90,54,.14)}
+
+/* Today */
+.progress{margin:2px 12px 16px;padding:18px;border-radius:22px;background:linear-gradient(135deg,#1c2409,#131317 65%);border:1px solid rgba(212,255,58,.22);display:flex;align-items:center;gap:18px}
+.pnum{font-family:var(--display);font-style:italic;font-weight:800;font-size:68px;line-height:.8;color:var(--volt)}
+.pnum span{font-size:34px;color:var(--muted)}
+.pmeta{flex:1}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--volt);border-radius:99px;transition:width .5s var(--ease)}
+.habit{display:flex;align-items:center;gap:12px;padding:12px;margin:0 12px 10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;transition:opacity .2s}
+.hicon{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:26px;background:linear-gradient(145deg,var(--g1),var(--g2) 160%);flex:none}
+.hbody{flex:1;min-width:0}
+.hname{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hmeta{display:flex;gap:8px;align-items:center;margin-top:5px;font-size:12.5px}
+.fire{color:#FFB020;font-weight:600}
+.prove{display:flex;align-items:center;gap:6px;height:48px;padding:0 14px;border-radius:14px;background:var(--volt);color:var(--ink);font-family:var(--display);font-weight:800;font-style:italic;font-size:22px;flex:none;transition:transform .15s var(--ease)}
+.prove:active{transform:scale(.95)}
+.prove svg{width:22px;height:22px}
+.del{height:40px;padding:0 14px;border-radius:12px;background:rgba(255,90,54,.14);color:var(--hot);font-weight:600;font-size:13px}
+.habit.done{opacity:.55}
+.donemark{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(212,255,58,.15);color:var(--volt);font-weight:800;font-size:20px;flex:none}
+.add{display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 12px;height:56px;width:calc(100% - 24px);border:1.5px dashed #34343e;border-radius:18px;color:var(--muted);font-weight:600}
+.add:hover{border-color:var(--volt);color:var(--volt)}
+
+/* Rank */
+.me-card{margin:0 12px 18px;padding:14px 16px;border-radius:18px;background:var(--surface);border:1px solid var(--line);font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.me-card .big{font-family:var(--display);font-style:italic;font-weight:800;font-size:36px;color:var(--volt);line-height:.9}
+.podium{display:flex;align-items:flex-end;gap:8px;padding:0 12px}
+.pcol{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+.pcol .nm{font-size:13px;font-weight:600}
+.pcol .pp{font-family:var(--display);font-weight:800;font-style:italic;font-size:22px}
+.pblock{width:100%;border-radius:14px 14px 4px 4px;display:grid;place-items:start center;padding-top:8px;font-family:var(--display);font-weight:800;font-style:italic;font-size:40px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.p1 .pblock{height:130px;background:var(--volt);color:var(--ink);border-color:var(--volt)}
+.p2 .pblock{height:96px}
+.p3 .pblock{height:72px}
+.rows{margin:14px 12px 0}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-bottom:8px}
+.row.me{border-color:var(--volt)}
+.row .place{font-family:var(--display);font-weight:800;font-style:italic;font-size:22px;color:var(--muted);width:24px}
+.row .nm{flex:1;font-weight:600}
+.row .pp{font-family:var(--display);font-weight:800;font-style:italic;font-size:22px}
+.info{margin:18px 12px 0;padding:16px;border-radius:18px;background:var(--surface);border:1px solid var(--line);font-size:13.5px;line-height:1.55;color:var(--muted)}
+.info h3{color:var(--text);font-size:14px;margin-bottom:8px}
+.info .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.info .grid div{background:var(--surface-2);border-radius:12px;padding:10px;text-align:center}
+.info .grid b{display:block;font-family:var(--display);font-style:italic;font-size:26px;color:var(--text)}
+
+/* Team */
+.code{margin:0 12px 16px;padding:18px;border-radius:20px;background:linear-gradient(135deg,#1c2409,#131317 70%);border:1px solid rgba(212,255,58,.22);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.code .c{font-family:var(--display);font-weight:800;font-style:italic;font-size:38px;color:var(--volt);letter-spacing:1px;line-height:1}
+.section-t{font-family:var(--display);font-weight:800;font-style:italic;text-transform:uppercase;font-size:22px;margin:22px 16px 10px}
+.soon{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 12px}
+.soon div{padding:16px;border-radius:18px;background:var(--surface);border:1px dashed #34343e;font-size:13px;color:var(--muted);line-height:1.45}
+.soon b{display:block;color:var(--text);font-size:14px;margin:6px 0 4px}
+.reset{display:block;margin:28px auto 0;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+
+/* Tabbar */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(440px,100%);z-index:10;background:rgba(10,10,12,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 8px calc(10px + env(safe-area-inset-bottom))}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--muted);padding:6px 0;transition:color .15s}
+.tab svg{width:24px;height:24px}
+.tab.on{color:var(--volt)}
+svg.i{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* Sheet */
+#sheet-root .scrim{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.6);opacity:0;transition:opacity .25s}
+#sheet-root .sheet{position:fixed;bottom:0;left:50%;z-index:21;width:min(440px,100%);max-height:92dvh;overflow:auto;background:var(--surface-2);border-radius:24px 24px 0 0;border-top:1px solid var(--line);padding:10px 16px calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,100%);transition:transform .3s var(--ease)}
+#sheet-root.open .scrim{opacity:1}
+#sheet-root.open .sheet{transform:translate(-50%,0)}
+.grab{width:40px;height:4px;border-radius:9px;background:#3a3a44;margin:0 auto 14px}
+.sheet-title{font-family:var(--display);font-weight:800;font-style:italic;text-transform:uppercase;font-size:30px;margin-bottom:14px}
+.lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 8px}
+.field{width:100%;background:#0f0f12;border:1px solid var(--line);border-radius:14px;padding:14px;color:var(--text);font-size:16px;outline:none}
+.field:focus{border-color:var(--volt)}
+.field.shake{animation:shake .35s;border-color:var(--hot)}
+.icons{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.ic{aspect-ratio:1;border-radius:12px;background:#0f0f12;border:1px solid var(--line);font-size:22px}
+.ic.on{border-color:var(--volt);background:rgba(212,255,58,.1)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg button{padding:12px 6px;border-radius:14px;background:#0f0f12;border:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.seg button span{font-size:12px;color:var(--muted)}
+.seg button.on{border-color:var(--volt);background:rgba(212,255,58,.1)}
+.btn-volt{width:100%;height:56px;margin-top:18px;border-radius:16px;background:var(--volt);color:var(--ink);font-family:var(--display);font-weight:800;font-style:italic;font-size:24px;text-transform:uppercase}
+.confirm-photo{border-radius:18px;overflow:hidden;aspect-ratio:4/5;max-height:46dvh;margin:0 auto;background:#000}
+.confirm-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.calc{margin:14px 0;padding:12px 14px;border-radius:14px;background:#0f0f12;border:1px solid var(--line);font-size:14px}
+.calc div{display:flex;justify-content:space-between;padding:4px 0}
+.calc .total{border-top:1px solid var(--line);margin-top:6px;padding-top:10px;font-weight:600}
+.calc .total b{font-family:var(--display);font-style:italic;font-size:28px;color:var(--volt);line-height:1}
+
+/* Celebrate + toast */
+.celebrate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(circle at 50% 45%,rgba(212,255,58,.18),transparent 60%),rgba(10,10,12,.96);animation:fade .25s;transition:opacity .4s}
+.celebrate.out{opacity:0}
+.c-inner{text-align:center}
+.c-pts{font-family:var(--display);font-weight:800;font-style:italic;font-size:150px;line-height:.9;color:var(--volt);animation:pop .55s cubic-bezier(.2,1.5,.4,1)}
+.c-sub{font-family:var(--display);font-weight:800;font-style:italic;font-size:30px;text-transform:uppercase;margin-top:6px}
+.c-rank{color:var(--muted);margin-top:10px;font-size:15px}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);z-index:60;background:var(--text);color:var(--ink);font-weight:600;font-size:14px;padding:10px 16px;border-radius:12px;animation:fade .2s}
+.empty{text-align:center;color:var(--muted);padding:40px 20px}
+
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{transform:scale(.3);opacity:0}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <main id="view"></main>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+<div id="sheet-root"></div>
+<input type="file" id="photo-input" accept="image/*" capture="environment" hidden>
+
+<script>
+// ---------- Constants ----------
+const KEY = 'navike-proto-v1';
+const DAY = 864e5;
+const DIFF = {
+  lako:    { label: 'Lako',    base: 5 },
+  srednje: { label: 'Srednje', base: 10 },
+  tesko:   { label: 'Teško',   base: 20 },
+};
+const ICONS = ['🏋️','🏃','📚','💧','🧘','🥗','😴','🚴','✍️','📵','🧠','🎸'];
+const PAIRS = [['#1a2208','#9fcc1f'],['#0c1a24','#2bb3d6'],['#260f09','#ff5a36'],['#1b1026','#a35cff'],['#0b1f18','#2fd39a'],['#261e08','#ffb020']];
+const REACTIONS = [['fire','🔥'],['strong','💪'],['clap','👏']];
+const SVG = {
+  feed:  '<svg class="i" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  today: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16.5 9.5"/></svg>',
+  rank:  '<svg class="i" viewBox="0 0 24 24"><path d="M6 20v-8M12 20V4M18 20v-5"/></svg>',
+  team:  '<svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.7.7 2.8 2.4 3 5.2"/></svg>',
+  camera:'<svg class="i" viewBox="0 0 24 24" style="stroke-width:2.2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+};
+const TABS = [['feed','Feed'],['today','Danas'],['rank','Rang'],['team','Ekipa']];
+
+// ---------- Helpers ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const dkey = t => { const d = new Date(t); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+const startOfDay = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const addDays = (key, n) => { const [y, m, d] = key.split('-').map(Number); return dkey(new Date(y, m - 1, d + n).getTime()); };
+const today = () => dkey(Date.now());
+const weekdayIdx = () => (new Date().getDay() + 6) % 7; // pon = 0
+const weekStart = () => startOfDay(Date.now()) - weekdayIdx() * DAY;
+const danWord = n => (n % 10 === 1 && n % 100 !== 11) ? 'dan' : 'dana';
+const navikaWord = n => (n % 10 === 1 && n % 100 !== 11) ? 'navika' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 'navike' : 'navika';
+const grad = icon => { let h = 0; for (const c of icon) h = (h * 31 + c.codePointAt(0)) >>> 0; return PAIRS[h % PAIRS.length]; };
+const gradStyle = icon => { const [a, b] = grad(icon); return `--g1:${a};--g2:${b}`; };
+
+// Poeni: osnova po težini × streak množilac (+10% po danu, max 2×)
+const mult = streak => Math.min(2, 1 + (streak - 1) * 0.1);
+const points = (diff, streak) => Math.round(DIFF[diff].base * mult(streak));
+const curStreak = h => (h.lastDone === today() || h.lastDone === addDays(today(), -1)) ? h.streak : 0;
+const nextStreak = h => h.lastDone === today() ? h.streak : h.lastDone === addDays(today(), -1) ? h.streak + 1 : 1;
+
+function ago(ts) {
+  const s = (Date.now() - ts) / 1000;
+  if (s < 60) return 'upravo';
+  if (s < 3600) return 'pre ' + Math.floor(s / 60) + ' min';
+  const k = dkey(ts);
+  if (k === today()) return 'pre ' + Math.floor(s / 3600) + 'h';
+  if (k === addDays(today(), -1)) return 'juče';
+  return 'pre ' + Math.round((startOfDay(Date.now()) - startOfDay(ts)) / DAY) + ' dana';
+}
+
+// ---------- Demo data ----------
+function seed() {
+  let sd = 42;
+  const r = () => (sd = (sd * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const now = Date.now(), today0 = startOfDay(now);
+  const users = [
+    { id: 'me', name: 'Ti',     color: '#D4FF3A' },
+    { id: 'u1', name: 'Marko',  color: '#3AE0FF' },
+    { id: 'u2', name: 'Jelena', color: '#FF5A36' },
+    { id: 'u3', name: 'Stefan', color: '#A35CFF' },
+    { id: 'u4', name: 'Ana',    color: '#2FD39A' },
+    { id: 'u5', name: 'Luka',   color: '#FFB020' },
+  ];
+  const defs = [
+    ['me', 'Teretana', '🏋️', 'tesko', .8], ['me', 'Čitanje 20 min', '📚', 'srednje', .95],
+    ['me', '8 čaša vode', '💧', 'lako', .7], ['me', 'Bez telefona posle 23h', '📵', 'srednje', .4],
+    ['u1', 'Teretana', '🏋️', 'tesko', .9], ['u1', 'Trčanje 5 km', '🏃', 'tesko', .5],
+    ['u2', 'Joga', '🧘', 'srednje', .9], ['u2', 'Čitanje', '📚', 'srednje', .8], ['u2', 'Zdrav doručak', '🥗', 'lako', .7],
+    ['u3', 'Bicikl', '🚴', 'srednje', .6], ['u3', 'Spavanje pre ponoći', '😴', 'lako', .5],
+    ['u4', 'Trčanje', '🏃', 'tesko', .85], ['u4', 'Dnevnik', '✍️', 'lako', .9],
+    ['u5', 'Gitara', '🎸', 'srednje', .5], ['u5', 'Učenje 1h', '🧠', 'srednje', .6],
+  ];
+  const captions = ['Leg day 💀', 'Ne odustajem', 'Jutros pre posla', 'Kiša, ali urađeno', 'Novi PR!', 'Lakše nego juče', 'Ko me stigne 😤', 'Danas teško išlo'];
+  const habits = [], posts = [];
+  defs.forEach(([uid, name, icon, diff, p], i) => {
+    const h = { id: 'h' + i, userId: uid, name, icon, diff, streak: 0, lastDone: null };
+    for (let off = -13; off <= 0; off++) {
+      const isToday = off === 0;
+      if (isToday && uid === 'me') continue;
+      if (r() > (isToday ? p * .6 : p)) continue;
+      let ts;
+      if (isToday) { const span = now - today0; if (span < 3600e3) continue; ts = today0 + (.15 + r() * .8) * span; }
+      else ts = today0 + off * DAY + (7 + r() * 15) * 3600e3;
+      const key = dkey(ts);
+      h.streak = h.lastDone === addDays(key, -1) ? h.streak + 1 : 1;
+      h.lastDone = key;
+      if (off >= -6) posts.push({
+        id: 'p' + posts.length, userId: uid, habitId: h.id, habitName: name, icon, diff,
+        points: points(diff, h.streak), streak: h.streak, ts: Math.round(ts), photo: null,
+        caption: r() < .35 ? captions[Math.floor(r() * captions.length)] : '',
+        reactions: { fire: [], strong: [], clap: [] },
+      });
+    }
+    habits.push(h);
+  });
+  posts.forEach(p => users.forEach(u => {
+    if (u.id === p.userId) return;
+    if (r() < .35) p.reactions.fire.push(u.id);
+    if (r() < .15) p.reactions.strong.push(u.id);
+    if (r() < .12) p.reactions.clap.push(u.id);
+  }));
+  posts.sort((a, b) => b.ts - a.ts);
+  return { v: 1, team: { name: 'Ekipa iz kraja', code: 'VOLT-27' }, users, habits, posts };
+}
+
+// ---------- State ----------
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.v === 1) return s; } catch (e) {}
+  return seed();
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) {
+    // Memorija puna: izbaci najstariju pravu sliku i probaj ponovo
+    const withPhoto = S.posts.filter(p => p.photo).sort((a, b) => a.ts - b.ts);
+    if (withPhoto.length > 1) { withPhoto[0].photo = null; save(); }
+    else toast('Memorija uređaja je puna');
+  }
+}
+let S = load();
+save();
+let tab = 'feed';
+let editMode = false;
+let sheetCtx = null;
+
+const user = id => S.users.find(u => u.id === id);
+const habit = id => S.habits.find(h => h.id === id);
+const avatar = (u, s) => `<div class="av" style="width:${s}px;height:${s}px;background:${u.color};font-size:${Math.round(s * .46)}px">${esc(u.name[0])}</div>`;
+
+function weekly() {
+  const ws = weekStart();
+  const m = new Map(S.users.map(u => [u.id, 0]));
+  S.posts.forEach(p => { if (p.ts >= ws && m.has(p.userId)) m.set(p.userId, m.get(p.userId) + p.points); });
+  return S.users.map(u => ({ u, pts: m.get(u.id) })).sort((a, b) => b.pts - a.pts);
+}
+
+// ---------- Views ----------
+function vFeed() {
+  const active = new Set(S.posts.filter(p => dkey(p.ts) === today()).map(p => p.userId));
+  const stories = S.users.map(u => `<div class="story ${active.has(u.id) ? 'on' : ''}"><div class="ring">${avatar(u, 54)}</div>${esc(u.name)}</div>`).join('');
+  const posts = S.posts.slice().sort((a, b) => b.ts - a.ts).map(postCard).join('');
+  return `<header class="top"><div><div class="h1">Feed</div><div class="sub">${esc(S.team.name)} · <b>${active.size}/${S.users.length}</b> aktivno danas</div></div></header>
+    <div class="stories">${stories}</div>
+    ${posts || '<div class="empty">Još nema objava. Budi prvi!</div>'}`;
+}
+
+function postCard(p) {
+  const u = user(p.userId) || { name: '?', color: '#555' };
+  const media = p.photo ? `<img src="${p.photo}" alt="">` : `<div class="ph" style="${gradStyle(p.icon)}"><span>${p.icon}</span></div>`;
+  return `<article class="post">
+    <div class="post-head">${avatar(u, 40)}
+      <div class="who"><b>${esc(u.name)}</b><span class="muted"> · ${ago(p.ts)}</span>
+        <div class="hl">${p.icon} ${esc(p.habitName)} <span class="diff d-${p.diff}">${DIFF[p.diff].label}</span></div></div>
+      <div class="pts">+${p.points}</div></div>
+    <div class="media">${media}<div class="streak-badge">🔥 ${p.streak}</div></div>
+    ${p.caption ? `<p class="cap">${esc(p.caption)}</p>` : ''}
+    <div class="reacts">${REACTIONS.map(([k, e]) => reactBtn(p, k, e)).join('')}</div>
+  </article>`;
+}
+const reactBtn = (p, k, e) => { const a = p.reactions[k]; return `<button class="react ${a.includes('me') ? 'on' : ''}" data-act="react" data-id="${p.id}" data-r="${k}">${e}<b>${a.length || ''}</b></button>`; };
+
+function vToday() {
+  const t = today();
+  const mine = S.habits.filter(h => h.userId === 'me');
+  const done = mine.filter(h => h.lastDone === t).length;
+  const pts = S.posts.filter(p => p.userId === 'me' && dkey(p.ts) === t).reduce((a, p) => a + p.points, 0);
+  let date = new Date().toLocaleDateString('sr-Latn', { weekday: 'long', day: 'numeric', month: 'long' });
+  date = date[0].toUpperCase() + date.slice(1);
+  const list = mine.map(h => {
+    const isDone = h.lastDone === t, cs = curStreak(h);
+    const right = editMode ? `<button class="del" data-act="del-habit" data-id="${h.id}">Obriši</button>`
+      : isDone ? `<div class="donemark">✓</div>`
+      : `<button class="prove" data-act="prove" data-id="${h.id}">${SVG.camera}+${points(h.diff, nextStreak(h))}</button>`;
+    return `<div class="habit ${isDone && !editMode ? 'done' : ''}">
+      <div class="hicon" style="${gradStyle(h.icon)}">${h.icon}</div>
+      <div class="hbody"><div class="hname">${esc(h.name)}</div>
+        <div class="hmeta"><span class="diff d-${h.diff}">${DIFF[h.diff].label}</span>
+        ${cs ? `<span class="fire">🔥 ${cs} ${danWord(cs)}</span>` : '<span class="muted">Kreni niz</span>'}</div></div>
+      ${right}</div>`;
+  }).join('');
+  return `<header class="top"><div><div class="h1">Danas</div><div class="sub">${esc(date)}</div></div>
+      ${mine.length ? `<button class="pill-btn" data-act="edit">${editMode ? 'Gotovo' : 'Uredi'}</button>` : ''}</header>
+    <div class="progress"><div class="pnum">${done}<span>/${mine.length}</span></div>
+      <div class="pmeta"><div class="bar"><i style="width:${mine.length ? done / mine.length * 100 : 0}%"></i></div>
+      <div class="sub">Danas osvojeno <b>${pts}</b> poena</div></div></div>
+    ${list}
+    <button class="add" data-act="open-add">+ Nova navika</button>`;
+}
+
+function vRank() {
+  const board = weekly();
+  const left = 7 - weekdayIdx();
+  const myIdx = board.findIndex(x => x.u.id === 'me');
+  const me = board[myIdx];
+  const meText = myIdx === 0 ? 'Ti vodiš! Brani prvo mesto.'
+    : `Fali ti <b>${board[myIdx - 1].pts - me.pts + 1}</b> poena da pretekneš: ${esc(board[myIdx - 1].u.name)}`;
+  const podCol = (x, place) => x ? `<div class="pcol p${place}">${avatar(x.u, place === 1 ? 60 : 48)}<div class="nm">${esc(x.u.name)}</div><div class="pp">${x.pts}</div><div class="pblock">${place}</div></div>` : '<div class="pcol"></div>';
+  const rows = board.slice(3).map((x, i) => `<div class="row ${x.u.id === 'me' ? 'me' : ''}"><div class="place">${i + 4}</div>${avatar(x.u, 36)}<div class="nm">${esc(x.u.name)}</div><div class="pp">${x.pts}</div></div>`).join('');
+  return `<header class="top"><div><div class="h1">Rang lista</div><div class="sub">Ova nedelja · reset ${left === 1 ? 'sutra' : `za ${left} dana`}</div></div></header>
+    <div class="me-card"><div>${meText}</div><div class="big">#${myIdx + 1}</div></div>
+    <div class="podium">${podCol(board[1], 2)}${podCol(board[0], 1)}${podCol(board[2], 3)}</div>
+    <div class="rows">${rows}</div>
+    <div class="info"><h3>Kako se računaju poeni</h3>
+      Svaka navika ima osnovu po težini:
+      <div class="grid"><div><b>5</b>Lako</div><div><b>10</b>Srednje</div><div><b>20</b>Teško</div></div>
+      Svaki dan zaredom dodaje <b style="color:var(--text)">+10%</b>, do najviše <b style="color:var(--text)">2×</b>. Prekineš niz – kreće ispočetka.</div>`;
+}
+
+function vTeam() {
+  const board = weekly();
+  const members = board.map(({ u, pts }) => {
+    const hs = S.habits.filter(h => h.userId === u.id);
+    const best = Math.max(0, ...hs.map(curStreak));
+    return `<div class="row ${u.id === 'me' ? 'me' : ''}">${avatar(u, 40)}<div class="nm">${esc(u.name)}<div class="sub" style="margin-top:2px">${hs.length} ${navikaWord(hs.length)} · najduži niz 🔥 ${best}</div></div><div class="pp">${pts}</div></div>`;
+  }).join('');
+  return `<header class="top"><div><div class="h1">Ekipa</div><div class="sub">${esc(S.team.name)} · ${S.users.length} članova</div></div></header>
+    <div class="code"><div><div class="sub" style="margin:0 0 6px">Pozovi drugare kodom</div><div class="c">${esc(S.team.code)}</div></div>
+      <button class="pill-btn" data-act="copy">Kopiraj</button></div>
+    <div class="rows" style="margin-top:0">${members}</div>
+    <div class="section-t">Uskoro</div>
+    <div class="soon">
+      <div>⚔️<b>1 na 1 izazovi</b>Izazovi drugara: ko duže izdrži bez slatkiša.</div>
+      <div>🎯<b>Zajednički cilj</b>Cela ekipa skuplja poene do zajedničkog cilja.</div>
+    </div>
+    <button class="reset" data-act="reset">Resetuj demo podatke</button>`;
+}
+
+const VIEWS = { feed: vFeed, today: vToday, rank: vRank, team: vTeam };
+function render() {
+  $('#view').innerHTML = VIEWS[tab]();
+  $('#tabbar').innerHTML = TABS.map(([k, l]) => `<button class="tab ${k === tab ? 'on' : ''}" data-act="tab" data-v="${k}">${SVG[k]}${l}</button>`).join('');
+}
+
+// ---------- Sheets ----------
+function openSheet(html) {
+  const root = $('#sheet-root');
+  root.innerHTML = `<div class="scrim" data-act="close-sheet"></div><div class="sheet"><div class="grab"></div>${html}</div>`;
+  requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('open')));
+}
+function closeSheet() {
+  const root = $('#sheet-root');
+  root.classList.remove('open');
+  setTimeout(() => { if (!root.classList.contains('open')) root.innerHTML = ''; }, 300);
+  sheetCtx = null;
+}
+
+function openAdd() {
+  sheetCtx = { icon: ICONS[0], diff: 'srednje' };
+  openSheet(`<div class="sheet-title">Nova navika</div>
+    <label class="lbl" for="hname">Naziv</label><input class="field" id="hname" maxlength="40" placeholder="npr. 10.000 koraka" autocomplete="off">
+    <label class="lbl">Ikonica</label><div class="icons">${ICONS.map(i => `<button class="ic ${i === sheetCtx.icon ? 'on' : ''}" data-act="pick-icon" data-v="${i}">${i}</button>`).join('')}</div>
+    <label class="lbl">Težina</label><div class="seg">${Object.entries(DIFF).map(([k, d]) => `<button class="${k === sheetCtx.diff ? 'on' : ''}" data-act="pick-diff" data-v="${k}"><b>${d.label}</b><span>${d.base} poena</span></button>`).join('')}</div>
+    <button class="btn-volt" data-act="add-habit">Dodaj naviku</button>`);
+}
+
+function openConfirm(hid, photo) {
+  const h = habit(hid), ns = nextStreak(h);
+  sheetCtx = { hid, photo };
+  openSheet(`<div class="sheet-title">${h.icon} ${esc(h.name)}</div>
+    <div class="confirm-photo"><img src="${photo}" alt=""></div>
+    <div class="calc">
+      <div><span class="muted">Osnova (${DIFF[h.diff].label})</span><b>${DIFF[h.diff].base}</b></div>
+      <div><span class="muted">Streak ${ns} ${danWord(ns)}</span><b>×${mult(ns).toFixed(1)}</b></div>
+      <div class="total"><span>Ukupno</span><b>+${points(h.diff, ns)}</b></div></div>
+    <input class="field" id="cap" maxlength="80" placeholder="Dodaj opis (nije obavezno)" autocomplete="off">
+    <button class="btn-volt" data-act="publish">Objavi u feed</button>`);
+}
+
+function compress(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, 900 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', .72));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+    img.src = url;
+  });
+}
+
+function publish() {
+  const { hid, photo } = sheetCtx, h = habit(hid), ns = nextStreak(h), pts = points(h.diff, ns);
+  const before = weekly().findIndex(x => x.u.id === 'me');
+  h.streak = ns; h.lastDone = today();
+  S.posts.unshift({ id: 'p' + Date.now(), userId: 'me', habitId: h.id, habitName: h.name, icon: h.icon, diff: h.diff,
+    points: pts, streak: ns, ts: Date.now(), photo, caption: $('#cap').value.trim(), reactions: { fire: [], strong: [], clap: [] } });
+  save(); closeSheet(); render();
+  const after = weekly().findIndex(x => x.u.id === 'me');
+  celebrate(pts, ns, after < before ? `Sad si #${after + 1} u ekipi!` : `Trenutno si #${after + 1} u ekipi`);
+}
+
+function celebrate(pts, streak, rankText) {
+  const el = document.createElement('div');
+  el.className = 'celebrate';
+  el.innerHTML = `<div class="c-inner"><div class="c-pts">+${pts}</div><div class="c-sub">🔥 ${streak} ${danWord(streak)} zaredom</div><div class="c-rank">${esc(rankText)}</div></div>`;
+  el.onclick = () => el.remove();
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add('out'), 1900);
+  setTimeout(() => el.remove(), 2300);
+}
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1800);
+}
+
+// ---------- Events ----------
+const input = $('#photo-input');
+input.addEventListener('change', async () => {
+  const f = input.files[0];
+  if (!f || !sheetCtx) return;
+  try { openConfirm(sheetCtx.hid, await compress(f)); }
+  catch { toast('Ovaj format slike nije podržan'); sheetCtx = null; }
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const { act, id, v } = b.dataset;
+  switch (act) {
+    case 'tab': tab = v; editMode = false; render(); window.scrollTo(0, 0); break;
+    case 'react': {
+      const p = S.posts.find(x => x.id === id), arr = p.reactions[b.dataset.r];
+      const i = arr.indexOf('me'); i < 0 ? arr.push('me') : arr.splice(i, 1);
+      save();
+      b.outerHTML = reactBtn(p, b.dataset.r, REACTIONS.find(r => r[0] === b.dataset.r)[1]);
+      break;
+    }
+    case 'prove': sheetCtx = { hid: id }; input.value = ''; input.click(); break;
+    case 'publish': publish(); break;
+    case 'edit': editMode = !editMode; render(); break;
+    case 'del-habit':
+      if (confirm('Obrisati ovu naviku? Objave u feedu ostaju.')) { S.habits = S.habits.filter(h => h.id !== id); save(); render(); }
+      break;
+    case 'open-add': openAdd(); setTimeout(() => $('#hname')?.focus(), 320); break;
+    case 'pick-icon':
+      sheetCtx.icon = v;
+      document.querySelectorAll('.ic').forEach(x => x.classList.toggle('on', x === b));
+      break;
+    case 'pick-diff':
+      sheetCtx.diff = v;
+      document.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b));
+      break;
+    case 'add-habit': {
+      const f = $('#hname'), name = f.value.trim();
+      if (!name) { f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake'); f.focus(); return; }
+      S.habits.push({ id: 'h' + Date.now(), userId: 'me', name, icon: sheetCtx.icon, diff: sheetCtx.diff, streak: 0, lastDone: null });
+      save(); closeSheet(); render(); toast('Navika dodata');
+      break;
+    }
+    case 'close-sheet': closeSheet(); break;
+    case 'copy':
+      navigator.clipboard?.writeText(S.team.code).then(() => toast('Kod kopiran'), () => toast('Kod: ' + S.team.code));
+      break;
+    case 'reset':
+      if (confirm('Vratiti demo podatke na početak? Tvoje objave i navike se brišu.')) {
+        try { localStorage.removeItem(KEY); } catch (e) {}
+        S = seed(); save(); tab = 'feed'; render();
+      }
+      break;
+  }
+});
+
+render();
+</script>
+</body>
+</html>

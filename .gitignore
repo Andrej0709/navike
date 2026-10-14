@@ -1,0 +1,11 @@
+# Local tooling
+.claude/
+node_modules/
+
+# Secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
